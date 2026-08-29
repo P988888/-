@@ -269,7 +269,7 @@ export function TouristApp({ tour, days, currentDay, initialMessages }: TouristA
                     value={storyAnswer}
                     onChange={(e) => setStoryAnswer(e.target.value)}
                     rows={2}
-                    placeholder="写一句你今天看见的细节，例如：定广门门洞里的光落在石板上…"
+                    placeholder="写一句你记住的细节，例如：颜色也可以用留白染出来…"
                     className="mt-3 w-full resize-none rounded-2xl border border-qian-200 bg-card px-3.5 py-2.5 text-sm outline-none placeholder:text-ink-faint focus:border-pine-400"
                   />
                   <button

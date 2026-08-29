@@ -381,9 +381,9 @@ function StoryScreen({
 function GuideStoryScreen({ members, onBack }: { members: Member[]; onBack: () => void }) {
   const done = members.filter((member) => member.storyDone).length;
   const themes = [
-    { title: "石头城的来处", source: "《青岩镇志》· 导游已审核" },
-    { title: "背街的电影记忆", source: "《青岩镇志》· 导游已审核" },
-    { title: "马头墙与屯堡营造", source: "贵州省博物馆 · 展陈资料" },
+    { title: "蜡染花纹为何是“留”出来的", source: "石头寨布依蜡染非遗工坊 · 传承人审核" },
+    { title: "蜡封、靛染与脱蜡的三步原理", source: "布依族蜡染技艺现场讲解稿 · 审核版" },
+    { title: "颜色也可以用留白染出来", source: "游客互动任务 · 可复述记忆钩子" },
   ];
 
   return (

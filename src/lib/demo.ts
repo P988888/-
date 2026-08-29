@@ -311,11 +311,11 @@ export const demoQuestions: QuestionItem[] = [
   { id: "q10", memberNickname: "小陈", text: "附近有卖水的吗？", intent: "facility", createdAt: new Date(now - 110 * 60_000).toISOString(), sourceLabel: "青岩景区导览图" },
 ];
 
-/** 「石头城」观察任务定义（故事完成明细用） */
+/** 布依蜡染互动任务定义（故事完成明细用） */
 export const demoStoryTask = {
-  title: "石头城的三个线索",
-  brief: "在背街自由探索时，找到「石街、石墙、石城门」，拍下一处你最喜欢的，并用一句话说说它。",
-  clues: ["石街", "石墙", "石城门"],
+  title: "石头寨 · 布依蜡染观察任务",
+  brief: "看看蜡染布上的花纹：它是直接画上去的，还是先用蜡封住、染色后留出来的？选择答案，再写下一句你记住的细节。",
+  clues: ["观察蜡绘花纹", "找出染色后的留白", "写下一句记忆钩子"],
 };
 
 /** 创建旅行团可选的线路模板 */

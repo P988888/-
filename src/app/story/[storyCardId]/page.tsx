@@ -43,19 +43,22 @@ export default async function StoryCardPage({
               <div className="flex items-center gap-2">
                 <AqianAvatar size={30} />
                 <span className="font-display text-sm font-semibold tracking-wide">
-                  阿黔 · 贵州故事卡
+                  我的贵州故事卡
                 </span>
               </div>
               <Badge className="border-white/25 bg-white/10 text-white">
                 有源可溯
               </Badge>
             </div>
-            <h1 className="font-display mt-5 text-3xl font-bold leading-snug">
+            <p className="mt-5 inline-flex rounded-full bg-[#d96b32] px-3 py-1 text-xs font-semibold text-white">
               {card.title}
+            </p>
+            <h1 className="font-display mt-4 text-2xl font-bold leading-relaxed">
+              “颜色也可以用‘留白’染出来——<br />蜡封住的地方，就是布的呼吸。”
             </h1>
-            <p className="mt-2.5 flex items-center gap-1.5 text-xs text-qian-100/90">
+            <p className="mt-3 flex items-center gap-1.5 text-xs text-qian-100/90">
               <MapPin className="size-3.5" />
-              {card.route} · {formatCnDate(card.date)} · {card.owner}的旅途
+              路线印记：{card.route} · {formatCnDate(card.date)} · {card.owner}的旅途
             </p>
           </div>
 
@@ -65,7 +68,7 @@ export default async function StoryCardPage({
             <section>
               <h2 className="flex items-center gap-1.5 text-sm font-semibold text-qian-700">
                 <ScrollText className="size-4" />
-                这一路听过的故事
+                互动讲解与记忆钩子
               </h2>
               <ul className="mt-3 space-y-3">
                 {card.stories.map((s) => (
@@ -90,7 +93,7 @@ export default async function StoryCardPage({
             {card.observation && <section className="mt-6">
               <h2 className="flex items-center gap-1.5 text-sm font-semibold text-qian-700">
                 <Camera className="size-4" />
-                观察任务
+                观察引导 · 游客作答
               </h2>
               <div className="mt-3 rounded-2xl border border-pine-500/25 bg-pine-100/50 p-3.5">
                 <p className="text-xs text-ink-faint">{card.observation.task}</p>
@@ -104,7 +107,7 @@ export default async function StoryCardPage({
             <section className="mt-6 border-t border-dashed border-qian-200 pt-4">
               <h2 className="flex items-center gap-1.5 text-xs font-semibold text-ink-soft">
                 <ShieldCheck className="size-4 text-moss-600" />
-                本卡内容来源（导游已审核）
+                内容来源（非遗工坊 / 传承人已审核）
               </h2>
               <ul className="mt-2 space-y-1">
                 {card.sources.map((s) => (
@@ -114,7 +117,7 @@ export default async function StoryCardPage({
                 ))}
               </ul>
               <p className="mt-2.5 text-[10px] leading-relaxed text-ink-faint">
-                故事卡只记录真实听过、答过、选过的内容，不含精确位置与行程轨迹。
+                AI 仅做语言转换，不自行创作；每条内容标注来源与版本，检索不到直接转人工。
               </p>
             </section>
 
@@ -147,7 +150,7 @@ export default async function StoryCardPage({
           className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-qian-700 text-base font-medium text-white shadow-card transition active:scale-[0.97]"
         >
           <Share2 className="size-4.5" />
-          分享给同行的人
+          保存图片 · 分享给同行的人
         </button>
         <p className="mt-3 text-center text-[11px] text-ink-faint">
           2026 多彩贵州「贵客松」AI 应用场景共创赛 · 阿黔团队

@@ -180,33 +180,45 @@ export function seedDemoTour(force = false): { code: string } {
       sourceTitle: "《青岩镇志》· 周导已审核", sourceUrl: null, verifiedAt: iso(now - 30 * dayMs),
     });
 
-    // 观察任务（按团归属）
+    // 布依蜡染互动任务：观察 → 作答 → 审核讲解 → 记忆钩子。
     sqlite
       .prepare(`INSERT INTO story_tasks (id,tour_code,route_key,title,brief,clues) VALUES (?,?,?,?,?,?)`)
       .run(
-        "task-stone-town", DEMO_CODE, "qingyan-north", "石头城的三个线索",
-        "在背街自由探索时，找到「石街、石墙、石城门」，拍下一处你最喜欢的，并用一句话说说它。",
-        JSON.stringify(["石街", "石墙", "石城门"])
+        "task-batik-memory", DEMO_CODE, "shitouzhai-batik", "石头寨 · 布依蜡染观察任务",
+        "看看蜡染布上的花纹：它是直接画上去的，还是先用蜡封住、染色后留出来的？选择答案，再写下一句你记住的细节。",
+        JSON.stringify(["观察蜡绘花纹", "找出染色后的留白", "写下一句记忆钩子"])
       );
 
-    // 林先生（u1）的演示故事卡，供 /story/[id] 展示
+    // 林先生（u1）的演示故事卡，供 /story/demo 展示。
     sqlite
       .prepare(
         `INSERT INTO story_cards (id,tour_code,member_id,title,owner,route,date,stories,observation,sources,created_at)
          VALUES (@id,@tourCode,@memberId,@title,@owner,@route,@date,@stories,@observation,@sources,@createdAt)`
       )
       .run({
-        id: "demo", tourCode: DEMO_CODE, memberId: "u1", title: "石头城的三个线索",
-        owner: "林先生", route: "青岩古镇北线", date: iso(now),
+        id: "demo", tourCode: DEMO_CODE, memberId: "u1", title: "石头寨 · 布依蜡染",
+        owner: "林先生", route: "黄果树 → 石头寨", date: iso(now),
         stories: JSON.stringify([
-          { title: "背街：被脚步磨亮的石板路", note: "听完了 90 秒中文深度版", source: "《青岩镇志》" },
-          { title: "马头墙：军事屯堡里的江南影子", note: "听完了 60 秒中文标准版", source: "贵州省博物馆 · 屯堡文化展陈资料" },
+          {
+            title: "颜色也可以用“留白”染出来",
+            note: "先用蜡刀蘸熔蜡在白布上描出纹样；蜡封住的纤维不吸收靛蓝，脱蜡后便留下白色花纹。",
+            source: "石头寨布依蜡染非遗工坊 · 传承人审核",
+          },
+          {
+            title: "蜡封住的地方，就是布的呼吸",
+            note: "完成观察选择并听完 60—90 秒互动讲解后，保存的一句可复述记忆点。",
+            source: "石头寨布依蜡染非遗工坊 · 现场讲解审核版",
+          },
         ]),
         observation: JSON.stringify({
-          task: "找到「石街、石墙、石城门」，拍下一处你最喜欢的",
-          answer: "我选了石城门——定广门。门洞里的光落在石板上，像一条被时间磨亮的河。",
+          task: "看看蜡染布上的花纹，是画上去的还是留出来的？",
+          answer: "是先用蜡封住，再染色后留出来的。颜色也可以用留白染出来。",
         }),
-        sources: JSON.stringify(["《青岩镇志》", "贵州省博物馆 · 屯堡文化展陈资料", "周导现场核验（2026.05）"]),
+        sources: JSON.stringify([
+          "石头寨布依蜡染非遗工坊 · 传承人审核",
+          "布依族蜡染技艺现场讲解稿 · 版本 2026.08",
+          "周导现场核验（2026.08）",
+        ]),
         createdAt: iso(now),
       });
   });
