@@ -57,8 +57,9 @@ export interface StatusDTO {
   stats?: { questionCount: number; storyDone: number; memberTotal: number };
   /** 游客端故事卡闭环：当前线路的观察任务定义 */
   storyTask?: { id: string; title: string; brief: string; clues: string[] } | null;
-  /** 该成员已生成的故事卡 id（用于直接跳转） */
+  /** 该成员已生成的故事卡；按生成时间排列，支持跨景区逐段查看。 */
   storyCardId?: string;
+  storyCardIds?: string[];
   /** 导游端「今日提问」明细（role=guide 时返回） */
   questions?: QuestionItem[];
 }

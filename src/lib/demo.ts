@@ -187,6 +187,11 @@ export interface ChatMessage {
   /** 来源标注：文化/行程类回答必须带 */
   source?: string;
   intent?: "schedule" | "culture" | "facility";
+  /** 文化讲解后的在地观察追问；游客回答后生成对应景区的一段故事卡。 */
+  observationPrompt?: string;
+  knowledgeCardIds?: string[];
+  /** 对话中即时出现的故事卡入口。 */
+  storyCardId?: string;
 }
 
 export const demoMessages: ChatMessage[] = [

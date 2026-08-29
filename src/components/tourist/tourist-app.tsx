@@ -2,21 +2,17 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import {
   BookOpenCheck,
   CalendarDays,
   ChevronRight,
   Clock3,
-  Camera,
   House,
   Map,
   Phone,
   SendHorizonal,
   UserRound,
-  Loader2,
-  Sparkles,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { AqianHeader } from "@/components/tourist/aqian-header";
@@ -58,22 +54,18 @@ interface TouristAppProps {
 type TouristTab = "home" | "itinerary" | "profile";
 
 export function TouristApp({ tour, days, currentDay, initialMessages }: TouristAppProps) {
-  const router = useRouter();
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [typing, setTyping] = useState(false);
   const [alertOpen, setAlertOpen] = useState(false);
   const [draft, setDraft] = useState("");
   const [activeTab, setActiveTab] = useState<TouristTab>("home");
-  const [storyAnswer, setStoryAnswer] = useState("");
-  const [generatingCard, setGeneratingCard] = useState(false);
-  const [storyError, setStoryError] = useState("");
+  const [pendingObservation, setPendingObservation] = useState<{ prompt: string; knowledgeCardId: string } | null>(null);
 
   // 2 秒轮询：导游改行程 / 确认异常 / 结束当天，游客端自动同步
   const { data: status } = useSWR<StatusDTO>(`/api/status?tourCode=${tour.code}&role=member`, statusFetcher, { refreshInterval: STATUS_REFRESH });
   const liveDays = status?.days ?? days;
   const liveCurrentDay = status?.currentDay ?? currentDay;
   const liveAlerts: GuideAlert[] = status?.alerts ?? [];
-  const storyTask = status?.storyTask ?? null;
   const storyCardId = status?.storyCardId;
 
   // 集合信息始终取自「今天」这一天
@@ -96,7 +88,9 @@ export function TouristApp({ tour, days, currentDay, initialMessages }: TouristA
         setMessages((ms) => [...ms, { ...msg, id: msg.id || nextId() }]);
         // 文化类回答来自已审核知识卡 → 记一次「听过的故事」，供故事卡只引真实内容。
         if (msg.intent === "culture" && msg.knowledgeCardIds?.length) {
-          void recordStoryEvent({ tourCode: tour.code, kind: "listened", refId: msg.knowledgeCardIds[0] });
+          const knowledgeCardId = msg.knowledgeCardIds[0];
+          void recordStoryEvent({ tourCode: tour.code, kind: "listened", refId: knowledgeCardId });
+          if (msg.observationPrompt) setPendingObservation({ prompt: msg.observationPrompt, knowledgeCardId });
         }
       }
     } catch (error) {
@@ -122,34 +116,36 @@ export function TouristApp({ tour, days, currentDay, initialMessages }: TouristA
     setDraft("");
     setMessages((ms) => [...ms, { id: nextId(), role: "me", text }]);
 
-    void ask(text);
-  }
-
-  /** 故事卡闭环：先记录观察答案，再按「真实听过的故事 + 观察答案」生成一张可分享卡。 */
-  async function generateMyCard() {
-    setGeneratingCard(true);
-    setStoryError("");
-    try {
-      if (storyAnswer.trim()) {
-        await recordStoryEvent({
-          tourCode: tour.code,
-          kind: "answered",
-          refId: storyTask?.id ?? "observation",
-          payload: { task: storyTask?.title ?? "我的旅途观察", answer: storyAnswer.trim() },
-        });
-      }
-      const result = await generateStoryCard(tour.code);
-      if (!result.ok) {
-        if (result.reason === "no_events") setStoryError("先听一段阿黔讲的故事（点首页“讲讲这里的故事”，或问“为什么这里的房子都是石头做的”），再答一句观察，就能生成你的故事卡。");
-        else setStoryError("需要先加入本团，才能生成故事卡");
-        return;
-      }
-      router.push(`/story/${result.storyCardId}`);
-    } catch {
-      setStoryError("生成故事卡暂时失败，请稍后再试");
-    } finally {
-      setGeneratingCard(false);
+    if (pendingObservation) {
+      const observation = pendingObservation;
+      setPendingObservation(null);
+      setTyping(true);
+      void (async () => {
+        try {
+          await recordStoryEvent({
+            tourCode: tour.code,
+            kind: "answered",
+            refId: observation.knowledgeCardId,
+            payload: { task: observation.prompt, answer: text },
+          });
+          const result = await generateStoryCard(tour.code, observation.knowledgeCardId);
+          if (!result.ok) throw new Error("故事卡生成失败");
+          setMessages((ms) => [...ms, {
+            id: nextId(), role: "aqian", intent: "culture",
+            text: `你注意到的这个细节很重要。它把刚才的讲解变成了你自己的现场记忆：${text}。我已经把“听到的知识、你的观察和审核来源”整理成这一段贵州故事。`,
+            source: "基于你的真实观察 · 已审核讲解内容",
+            storyCardId: result.storyCardId,
+          }]);
+        } catch {
+          setMessages((ms) => [...ms, { ...refusalMessage, id: nextId(), text: "我记住了你的观察，但故事卡暂时生成失败，请稍后再试。" }]);
+        } finally {
+          setTyping(false);
+        }
+      })();
+      return;
     }
+
+    void ask(text);
   }
 
   return (
@@ -234,58 +230,17 @@ export function TouristApp({ tour, days, currentDay, initialMessages }: TouristA
                 </button>
               </Card>
 
-              {storyCardId ? (
-                <Link href={`/story/${storyCardId}`} className="block" aria-label="查看我的贵州故事卡">
-                  <Card className="flex items-center gap-3 border-pine-500/25 bg-pine-100/45 p-4 transition active:scale-[0.98]">
-                    <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-card text-pine-600 shadow-card">
+              <Link href={storyCardId ? `/story/${storyCardId}` : "/story/demo"} className="block" aria-label="查看我的贵州故事卡">
+                <Card className="flex min-h-16 items-center justify-between border-[#c49a55]/35 bg-[#fbf4df] px-4 py-3.5 transition active:scale-[0.98]">
+                  <span className="flex items-center gap-3">
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-[#aa7839] text-white shadow-card">
                       <BookOpenCheck className="size-5" />
                     </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[15px] font-semibold text-ink">我的贵州故事卡</span>
-                      <span className="mt-0.5 block text-xs leading-relaxed text-ink-soft">你的旅途纪念卡已生成，点击查看可分享</span>
-                    </span>
-                    <ChevronRight className="size-5 shrink-0 text-pine-600" />
-                  </Card>
-                </Link>
-              ) : (
-                <Card className="border-pine-500/25 bg-pine-100/35 p-4">
-                  <div className="flex items-center gap-2">
-                    <BookOpenCheck className="size-4 text-pine-600" />
-                    <h2 className="text-[15px] font-semibold text-ink">我的贵州故事卡</h2>
-                  </div>
-                  <p className="mt-2 text-xs leading-relaxed text-ink-soft">
-                    {storyTask ? `${storyTask.title} — ${storyTask.brief}` : "多问问阿黔关于这里的文化与故事，再把你的观察写下来，即可生成一张可分享的旅途纪念卡。"}
-                  </p>
-                  {storyTask && storyTask.clues.length > 0 && (
-                    <ul className="mt-2 space-y-1">
-                      {storyTask.clues.map((clue) => (
-                        <li key={clue} className="flex items-center gap-1.5 text-xs text-ink-soft">
-                          <Camera className="size-3.5 shrink-0 text-pine-600" /> {clue}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  <textarea
-                    value={storyAnswer}
-                    onChange={(e) => setStoryAnswer(e.target.value)}
-                    rows={2}
-                    placeholder="写一句你记住的细节，例如：颜色也可以用留白染出来…"
-                    className="mt-3 w-full resize-none rounded-2xl border border-qian-200 bg-card px-3.5 py-2.5 text-sm outline-none placeholder:text-ink-faint focus:border-pine-400"
-                  />
-                  <button
-                    type="button"
-                    disabled={generatingCard}
-                    onClick={() => void generateMyCard()}
-                    className="mt-3 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-2xl bg-pine-600 text-sm font-medium text-white transition active:scale-[0.98] disabled:opacity-60"
-                  >
-                    {generatingCard ? (<><Loader2 className="size-4 animate-spin" /> 正在生成…</>) : (<><Sparkles className="size-4" /> 生成我的故事卡</>)}
-                  </button>
-                  {storyError && <p role="alert" className="mt-2 text-[11px] leading-relaxed text-cinnabar-700">{storyError}</p>}
-                  <p className="mt-2 text-[11px] leading-relaxed text-ink-faint">
-                    提示：先在首页点「讲讲这里的故事」，阿黔讲过的内容会自动记入卡片；这里只需补一句你观察到的细节。
-                  </p>
+                    <span className="text-[15px] font-semibold text-ink">查看我的贵州故事卡</span>
+                  </span>
+                  <ChevronRight className="size-5 shrink-0 text-[#aa7839]" />
                 </Card>
-              )}
+              </Link>
             </div>
           </section>
         )}
@@ -306,7 +261,7 @@ export function TouristApp({ tour, days, currentDay, initialMessages }: TouristA
                   }
                 }}
                 rows={1}
-                placeholder="问集合、问故事，或说「我需要帮助」…"
+                placeholder={pendingObservation ? "说说你注意到的细节、感受或好奇的问题…" : "问集合、问故事，或说「我需要帮助」…"}
                 className="max-h-28 min-h-[44px] flex-1 resize-none rounded-2xl border border-qian-200 bg-paper px-3.5 py-2.5 text-[15px] outline-none placeholder:text-ink-faint focus:border-qian-400"
               />
               <button

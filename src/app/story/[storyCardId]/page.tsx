@@ -1,161 +1,96 @@
-import {
-  BookOpenCheck,
-  Camera,
-  MapPin,
-  ScrollText,
-  Share2,
-  ShieldCheck,
-} from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
+import Link from "next/link";
+import { ChevronLeft, ChevronRight, Share2 } from "lucide-react";
+import { and, asc, eq } from "drizzle-orm";
 import { AppShell } from "@/components/app-shell";
-import { AqianAvatar } from "@/components/aqian-avatar";
-import { Badge } from "@/components/ui/badge";
 import { formatCnDate } from "@/lib/utils";
 import { getStoryCard } from "@/lib/db/queries";
+import { db, schema } from "@/lib/db";
 import { notFound } from "next/navigation";
 import { seedDemoTour } from "@/lib/db/seed";
 
-/**
- * 故事卡分享页 —— 只由真实 story_event 生成：
- * 听过的故事、答过的观察题、来源、路线日期。
- * 不含真实姓名（用昵称）、不含精确位置与轨迹。
- */
-export default async function StoryCardPage({
-  params,
-}: {
-  params: Promise<{ storyCardId: string }>;
-}) {
+/** 一次“讲解 → 观察追问 → 游客作答”生成一段卡；同一游客的多段卡可前后切换。 */
+export default async function StoryCardPage({ params }: { params: Promise<{ storyCardId: string }> }) {
   const { storyCardId } = await params;
-  // 故事卡页可由游客端跳转或分享链接打开；演示卡首次打开时先初始化种子。
   if (storyCardId === "demo") seedDemoTour();
   const card = getStoryCard(storyCardId);
   if (!card) notFound();
 
+  const row = db.select({ tourCode: schema.storyCards.tourCode, memberId: schema.storyCards.memberId })
+    .from(schema.storyCards).where(eq(schema.storyCards.id, storyCardId)).get();
+  const sequence = row ? db.select({ id: schema.storyCards.id }).from(schema.storyCards)
+    .where(and(eq(schema.storyCards.tourCode, row.tourCode), eq(schema.storyCards.memberId, row.memberId)))
+    .orderBy(asc(schema.storyCards.createdAt)).all() : [];
+  const index = sequence.findIndex((item) => item.id === storyCardId);
+  const previousId = index > 0 ? sequence[index - 1]?.id : undefined;
+  const nextId = index >= 0 && index < sequence.length - 1 ? sequence[index + 1]?.id : undefined;
+  const quote = storyQuote(card.title, card.observation?.answer, card.stories[0]?.note);
+  const source = card.sources[0] ?? card.stories[0]?.source ?? "本团导游审核内容";
+
   return (
     <AppShell>
       <main className="flex flex-1 flex-col items-center px-5 py-8">
-        {/* 卡片本体：蜡染装裱 */}
-        <article className="w-full overflow-hidden rounded-[28px] shadow-lift">
-          {/* 卡头 */}
-          <div className="batik-deep relative px-6 pb-6 pt-7 text-white">
-            <div className="batik-band absolute inset-x-0 top-0 h-2 opacity-80" />
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <AqianAvatar size={30} />
-                <span className="font-display text-sm font-semibold tracking-wide">
-                  我的贵州故事卡
-                </span>
+        <article className="w-full overflow-hidden rounded-[24px] border border-[#d7d7cf] bg-white shadow-lift">
+          <header className="bg-[#183f36] px-6 py-7 text-white">
+            <h1 className="font-display text-2xl font-bold">我的贵州故事卡</h1>
+          </header>
+
+          <div className="px-6 py-7">
+            <p className="font-display text-lg font-bold text-[#b66b36]">{displayTitle(card.title)}</p>
+            <blockquote className="font-display mt-7 whitespace-pre-line text-[22px] font-semibold leading-relaxed text-[#314a5a]">
+              “{quote}”
+            </blockquote>
+
+            {card.observation && (
+              <div className="mt-6 rounded-2xl bg-[#f8f4e9] px-4 py-3.5">
+                <p className="text-[11px] font-semibold text-[#9a6b2f]">我在现场注意到</p>
+                <p className="mt-1.5 text-sm leading-relaxed text-[#526574]">{card.observation.answer}</p>
               </div>
-              <Badge className="border-white/25 bg-white/10 text-white">
-                有源可溯
-              </Badge>
+            )}
+
+            <div className="mt-7 border-t border-[#d9dedf] pt-5 text-xs leading-relaxed text-[#78909d]">
+              <p>内容来源：{source.replace(/\s*[·・]\s*传承人审核$/, "审核")}</p>
+              <p className="mt-1.5">路线印记：{card.route}</p>
+              <p className="mt-1.5">记录时间：{formatCnDate(card.date)}</p>
             </div>
-            <p className="mt-5 inline-flex rounded-full bg-[#d96b32] px-3 py-1 text-xs font-semibold text-white">
-              {card.title}
-            </p>
-            <h1 className="font-display mt-4 text-2xl font-bold leading-relaxed">
-              “颜色也可以用‘留白’染出来——<br />蜡封住的地方，就是布的呼吸。”
-            </h1>
-            <p className="mt-3 flex items-center gap-1.5 text-xs text-qian-100/90">
-              <MapPin className="size-3.5" />
-              路线印记：{card.route} · {formatCnDate(card.date)} · {card.owner}的旅途
-            </p>
-          </div>
-
-          {/* 卡身：宣纸底 */}
-          <div className="paper-grain bg-card px-6 py-6">
-            {/* 听过的故事（真实 story events） */}
-            <section>
-              <h2 className="flex items-center gap-1.5 text-sm font-semibold text-qian-700">
-                <ScrollText className="size-4" />
-                互动讲解与记忆钩子
-              </h2>
-              <ul className="mt-3 space-y-3">
-                {card.stories.map((s) => (
-                  <li
-                    key={s.title}
-                    className="rounded-2xl border border-qian-100/80 bg-paper/60 p-3.5"
-                  >
-                    <p className="font-display text-[15px] font-semibold leading-snug">
-                      {s.title}
-                    </p>
-                    <p className="mt-1 text-xs text-ink-soft">{s.note}</p>
-                    <p className="mt-1.5 flex items-center gap-1 text-[11px] text-pine-600">
-                      <BookOpenCheck className="size-3.5" />
-                      {s.source}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            </section>
-
-            {/* 观察任务 */}
-            {card.observation && <section className="mt-6">
-              <h2 className="flex items-center gap-1.5 text-sm font-semibold text-qian-700">
-                <Camera className="size-4" />
-                观察引导 · 游客作答
-              </h2>
-              <div className="mt-3 rounded-2xl border border-pine-500/25 bg-pine-100/50 p-3.5">
-                <p className="text-xs text-ink-faint">{card.observation.task}</p>
-                <p className="font-display mt-2 text-[15px] leading-relaxed text-ink">
-                  “{card.observation.answer}”
-                </p>
-              </div>
-            </section>}
-
-            {/* 来源清单 */}
-            <section className="mt-6 border-t border-dashed border-qian-200 pt-4">
-              <h2 className="flex items-center gap-1.5 text-xs font-semibold text-ink-soft">
-                <ShieldCheck className="size-4 text-moss-600" />
-                内容来源（非遗工坊 / 传承人已审核）
-              </h2>
-              <ul className="mt-2 space-y-1">
-                {card.sources.map((s) => (
-                  <li key={s} className="text-[11px] text-ink-faint">
-                    · {s}
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-2.5 text-[10px] leading-relaxed text-ink-faint">
-                AI 仅做语言转换，不自行创作；每条内容标注来源与版本，检索不到直接转人工。
-              </p>
-            </section>
-
-            {/* 卡尾 */}
-            <div className="mt-5 flex items-end justify-between">
-              <div>
-                <p className="font-display text-sm font-semibold text-qian-800">
-                  扫码，让你的团也有阿黔
-                </p>
-                <p className="mt-0.5 text-[10px] text-ink-faint">
-                  真人导游负责带团，阿黔负责接住漏掉的信号
-                </p>
-              </div>
-              <div className="rounded-xl bg-card p-1.5 shadow-card">
-                <QRCodeSVG
-                  value="https://aqian.demo/"
-                  size={64}
-                  fgColor="#1f4a5e"
-                  bgColor="#fffdf6"
-                  level="M"
-                />
-              </div>
-            </div>
+            <p className="mt-8 font-semibold text-[#b66b36]">支持保存图片・一键分享朋友圈</p>
           </div>
         </article>
 
-        {/* 分享操作 */}
-        <button
-          type="button"
-          className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-qian-700 text-base font-medium text-white shadow-card transition active:scale-[0.97]"
-        >
-          <Share2 className="size-4.5" />
-          保存图片 · 分享给同行的人
+        {sequence.length > 1 && (
+          <nav aria-label="故事段落切换" className="mt-4 grid w-full grid-cols-2 gap-3">
+            {previousId ? (
+              <Link href={`/story/${previousId}`} className="flex min-h-12 items-center justify-center gap-1.5 rounded-2xl border border-[#b88a4b]/45 bg-white text-sm font-semibold text-[#8e642d]">
+                <ChevronLeft className="size-4" /> 查看上一段故事
+              </Link>
+            ) : <span className="min-h-12" />}
+            {nextId ? (
+              <Link href={`/story/${nextId}`} className="flex min-h-12 items-center justify-center gap-1.5 rounded-2xl bg-[#183f36] text-sm font-semibold text-white shadow-card">
+                查看下一段故事 <ChevronRight className="size-4" />
+              </Link>
+            ) : <span className="min-h-12" />}
+          </nav>
+        )}
+
+        <button type="button" className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#aa7839] text-base font-medium text-white shadow-card transition active:scale-[0.97]">
+          <Share2 className="size-4.5" /> 保存图片・一键分享朋友圈
         </button>
-        <p className="mt-3 text-center text-[11px] text-ink-faint">
-          2026 多彩贵州「贵客松」AI 应用场景共创赛 · 阿黔团队
+        <p className="mt-3 text-center text-[10px] leading-relaxed text-[#78909d]">
+          本卡只记录游客真实问过、听过和观察到的内容；AI 不补写未发生的旅途。
         </p>
       </main>
     </AppShell>
   );
+}
+
+function displayTitle(title: string) {
+  return title
+    .replace(/石头寨\s*[·・]\s*布依族?蜡染.*/, "石头寨・布依蜡染")
+    .replace(/[:：].*$/, "");
+}
+
+function storyQuote(title: string, answer?: string, note?: string) {
+  if (/蜡染|留白/.test(`${title}${answer}${note}`)) return "颜色也可以用留白染出来——\n蜡封住的地方，就是布的呼吸。";
+  if (answer?.trim()) return answer.trim().replace(/^[“\"]|[”\"]$/g, "");
+  if (note?.trim()) return note.trim().slice(0, 72);
+  return "我不只听见了一个故事，也在现场看见了属于自己的细节。";
 }

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { BookOpenCheck } from "lucide-react";
+import Link from "next/link";
+import { BookOpenCheck, ChevronRight, Eye } from "lucide-react";
 import { AqianAvatar } from "@/components/aqian-avatar";
 import type { ChatMessage } from "@/lib/demo";
 
@@ -39,6 +40,17 @@ export function ChatPanel({
                   <BookOpenCheck className="size-3.5 text-pine-500" />
                   {m.source}
                 </p>
+              )}
+              {m.observationPrompt && (
+                <div className="mt-2 rounded-2xl border border-[#c49a55]/35 bg-[#fbf4df] px-3.5 py-3 text-[13px] leading-relaxed text-ink-soft">
+                  <p className="mb-1 flex items-center gap-1.5 font-semibold text-[#9a6b2f]"><Eye className="size-3.5" /> 阿黔想带你多看一眼</p>
+                  {m.observationPrompt}
+                </div>
+              )}
+              {m.storyCardId && (
+                <Link href={`/story/${m.storyCardId}`} className="mt-2 flex min-h-11 items-center justify-between rounded-2xl bg-[#aa7839] px-3.5 text-sm font-semibold text-white shadow-card">
+                  查看我的故事卡 <ChevronRight className="size-4" />
+                </Link>
               )}
             </div>
           </div>

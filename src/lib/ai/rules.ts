@@ -40,6 +40,20 @@ function refusal(tourCode: string): ChatMessage {
   return { id: nowId("m"), role: "aqian", text: `这件事我暂时无法确认，不敢随便回答。我已为你保留当前团的集合信息；如需帮助，请直接联系${tour?.guideName ?? "导游"}，或点上方「我需要帮助」。`, source: "知识库未收录 · 已按规则转人工" };
 }
 
+function observationPrompt(title: string, content: string, language: "zh" | "en") {
+  if (language === "en") return `Look around where you are now: what detail related to “${title}” catches your eye, and what feeling or question does it give you?`;
+  const topic = /蜡染|靛蓝|留白/.test(`${title}${content}`)
+    ? "找找花纹里被蜡留住的白色、靛蓝深浅或细小冰纹"
+    : /瀑布|水帘|水声/.test(`${title}${content}`)
+      ? "留意水声、水雾、岩壁和光线的变化"
+      : /苗寨|吊脚楼|银饰/.test(`${title}${content}`)
+        ? "看看吊脚楼、银饰纹样或寨子顺山势展开的层次"
+        : /石|城门|马头墙|背街/.test(`${title}${content}`)
+          ? "看看脚下石板、墙面痕迹、门洞光影或屋脊轮廓"
+          : `找一个与你刚听到的“${title}”有关的现场细节`;
+  return `别急着往前走，${topic}。哪一个细节最吸引你？它让你产生了什么感受，或还想追问什么？用一句话告诉我。`;
+}
+
 function answerFromCard(tourCode: string, message: string, language: "zh" | "en", storyLength: "short" | "deep") {
   const tour = getTourByCode(tourCode); if (!tour) return null;
   const cards = getVerifiedKnowledge(tour.code, message);
@@ -48,8 +62,10 @@ function answerFromCard(tourCode: string, message: string, language: "zh" | "en"
   const isDeep = storyLength === "deep";
   const text = isEn ? (isDeep ? card.contentEnDeep : card.contentEnShort) : (isDeep ? card.contentZhDeep : card.contentZhShort);
   if (!text) return null;
+  const isCulture = card.category === "culture";
   return { id: nowId("m"), role: "aqian" as const, intent: card.category === "facility" ? "facility" as const : "culture" as const,
-    text, source: `来源：${card.sourceTitle}`, knowledgeCardIds: [card.id] };
+    text, source: `来源：${card.sourceTitle}`, knowledgeCardIds: [card.id],
+    observationPrompt: isCulture ? observationPrompt(card.title, text, language) : undefined };
 }
 
 /**
@@ -81,7 +97,8 @@ async function generateStory(message: string, language: "zh" | "en"): Promise<Ch
     if (!response.ok) return null;
     const content = body.choices?.[0]?.message?.content?.trim();
     if (!content) return null;
-    return { id: nowId("m"), role: "aqian", intent: "culture", text: content, source: "AI 生成讲解 · 仅供参考" };
+    return { id: nowId("m"), role: "aqian", intent: "culture", text: content, source: "AI 生成讲解 · 仅供参考",
+      observationPrompt: observationPrompt(message, content, language) };
   } catch {
     return null;
   }

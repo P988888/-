@@ -93,16 +93,18 @@ export function getStatus(tourCode: string, memberId?: string, includeGuideData 
   // 游客端故事卡闭环：当前团的观察任务 + 该成员已生成的故事卡 id。
   const task = db.select().from(schema.storyTasks)
     .where(eq(schema.storyTasks.tourCode, tour.code)).get();
-  const storyCardId = memberId
+  const storyCardIds = memberId
     ? db.select({ id: schema.storyCards.id }).from(schema.storyCards)
-        .where(and(eq(schema.storyCards.tourCode, tour.code), eq(schema.storyCards.memberId, memberId))).get()?.id
+        .where(and(eq(schema.storyCards.tourCode, tour.code), eq(schema.storyCards.memberId, memberId)))
+        .orderBy(asc(schema.storyCards.createdAt)).all().map((card) => card.id)
     : undefined;
+  const storyCardId = storyCardIds?.at(-1);
   return {
     serverTime: new Date().toISOString(), currentDay: tour.currentDay, days: getDays(tour.code),
     alerts: getAlerts(tour.code, memberId), members,
     stats: includeGuideData ? { questionCount, storyDone: members?.filter((m) => m.storyDone).length ?? 0, memberTotal: members?.length ?? 0 } : undefined,
     storyTask: task ? { id: task.id, title: task.title, brief: task.brief, clues: asArray<string>(task.clues) } : null,
-    storyCardId,
+    storyCardId, storyCardIds,
     questions: includeGuideData ? getQuestions(tour.code) : undefined,
   };
 }
