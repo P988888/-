@@ -44,7 +44,7 @@ export async function setMemberSession(tourCode: string, memberId: string) {
   const store = await cookies();
   store.set(memberCookie(tourCode), jwt, {
     httpOnly: true,
-    secure: isProd,
+    secure: isProd && (process.env.NEXT_PUBLIC_APP_URL?.startsWith("https") ?? false),
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 2,
@@ -115,7 +115,7 @@ export async function setGuideSession(tourCode: string) {
   const store = await cookies();
   store.set(guideCookie(tourCode), jwt, {
     httpOnly: true,
-    secure: isProd,
+    secure: isProd && (process.env.NEXT_PUBLIC_APP_URL?.startsWith("https") ?? false),
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 2,
