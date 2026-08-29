@@ -1,0 +1,126 @@
+@import "tailwindcss";
+
+/* ————————————————————————————————
+   阿黔设计系统 ·「青岩蜡染」
+   主色：蜡染靛蓝（qian）—— 文化、可信赖
+   朱红（cinnabar）—— 只给异常与真人导游
+   宣纸米白（paper）—— 底色
+   松金（pine）—— 贵客松点缀
+———————————————————————————————— */
+
+@theme {
+  /* 蜡染靛蓝 */
+  --color-qian-50: #eef5f7;
+  --color-qian-100: #d9e9ee;
+  --color-qian-200: #b3d3dd;
+  --color-qian-300: #7fb2c2;
+  --color-qian-400: #4d8ba0;
+  --color-qian-500: #33708a;
+  --color-qian-600: #265c74;
+  --color-qian-700: #1f4a5e;
+  --color-qian-800: #1a3b4c;
+  --color-qian-900: #142e3b;
+  --color-qian-950: #0c1f29;
+
+  /* 朱砂红 —— 仅异常 / 真人导游 */
+  --color-cinnabar-50: #fbf0ed;
+  --color-cinnabar-100: #f6ddd6;
+  --color-cinnabar-500: #c0513c;
+  --color-cinnabar-600: #b04534;
+  --color-cinnabar-700: #963a2c;
+  --color-cinnabar-800: #7a2f24;
+
+  /* 宣纸与石板 */
+  --color-paper: #f6f1e6;
+  --color-card: #fffdf6;
+  --color-ink: #25323a;
+  --color-ink-soft: #5c6b72;
+  --color-ink-faint: #8b979c;
+
+  /* 松金（贵客松点缀） */
+  --color-pine-100: #f4ead3;
+  --color-pine-300: #dfc27e;
+  --color-pine-500: #b98a2f;
+  --color-pine-600: #9c7124;
+
+  /* 青石绿（成功/正常状态） */
+  --color-moss-100: #e3efe4;
+  --color-moss-600: #3f7a52;
+  --color-moss-700: #336343;
+
+  --font-display: "Songti SC", "STSong", "Noto Serif SC", "Source Han Serif SC", "SimSun", serif;
+  --font-body: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", -apple-system, "Helvetica Neue", sans-serif;
+
+  --shadow-card: 0 1px 2px rgb(20 46 59 / 0.05), 0 4px 16px rgb(20 46 59 / 0.07);
+  --shadow-lift: 0 2px 4px rgb(20 46 59 / 0.08), 0 10px 28px rgb(20 46 59 / 0.12);
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+}
+
+/* 衬线标题 */
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* 蜡染纹样 —— 靛蓝底上的白色连环纹（装饰带） */
+.batik-band {
+  background-color: var(--color-qian-800);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.16' stroke-width='1.4'%3E%3Ccircle cx='24' cy='24' r='9'/%3E%3Ccircle cx='24' cy='24' r='3.5'/%3E%3Cpath d='M0 24h15M33 24h15M24 0v15M24 33v15'/%3E%3Ccircle cx='0' cy='0' r='6'/%3E%3Ccircle cx='48' cy='0' r='6'/%3E%3Ccircle cx='0' cy='48' r='6'/%3E%3Ccircle cx='48' cy='48' r='6'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* 深色靛蓝渐变（头部/故事卡） */
+.batik-deep {
+  background:
+    radial-gradient(120% 90% at 85% -10%, rgb(127 178 194 / 0.35) 0%, transparent 55%),
+    radial-gradient(100% 80% at 0% 110%, rgb(185 138 47 / 0.18) 0%, transparent 50%),
+    linear-gradient(160deg, var(--color-qian-800) 0%, var(--color-qian-950) 100%);
+}
+
+/* 宣纸细纹 */
+.paper-grain {
+  background-image: radial-gradient(rgb(37 50 58 / 0.045) 1px, transparent 1px);
+  background-size: 14px 14px;
+}
+
+/* 青岩石板纹理（图片占位） */
+.stone-wall {
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / 0.06) 25%, transparent 25%) -16px 0 / 32px 32px,
+    linear-gradient(225deg, rgb(255 255 255 / 0.06) 25%, transparent 25%) -16px 0 / 32px 32px,
+    linear-gradient(315deg, rgb(255 255 255 / 0.06) 25%, transparent 25%) 0 0 / 32px 32px,
+    linear-gradient(160deg, #4e6b76 0%, #33494f 55%, #26383d 100%);
+}
+
+/* 安全区 */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* 打字机光标 */
+.typing-dot {
+  animation: typing-blink 1.2s infinite;
+}
+@keyframes typing-blink {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
+}
+
+/* 异常卡呼吸提示（图标+文字同时使用，不只依赖红色） */
+.alert-pulse {
+  animation: alert-pulse 2s ease-in-out infinite;
+}
+@keyframes alert-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(176 69 52 / 0.25); }
+  50% { box-shadow: 0 0 0 6px rgb(176 69 52 / 0); }
+}

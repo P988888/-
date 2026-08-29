@@ -1,0 +1,47 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files（真实密钥不提交；.env.example 为占位模板，保留）
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# SQLite 数据库数据（不随仓库提交）
+seed/*.db
+seed/*.db-wal
+seed/*.db-shm
+seed/*.db.bak*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
