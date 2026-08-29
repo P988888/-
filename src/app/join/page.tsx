@@ -35,7 +35,7 @@ export default function JoinPage() {
     step === 2;
 
   function stepMissingHint(): string {
-    if (step === 0) return "请输入团码（4—10 位，例如 QY-1024）";
+    if (step === 0) return "请输入团码（4—10 位，例如 QY-9696）";
     if (step === 1) return "请填写你的昵称";
     return "";
   }
@@ -94,17 +94,17 @@ export default function JoinPage() {
             <Input
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="例如 QY-1024"
+              placeholder="例如 QY-9696"
               className="h-12 text-center font-mono text-lg tracking-[0.22em]"
               maxLength={10}
               autoFocus
             />
             <button
               type="button"
-              onClick={() => setCode("QY-1024")}
+              onClick={() => setCode("QY-9696")}
               className="text-xs text-qian-500 underline underline-offset-2"
             >
-              演示环境：点击填入演示团码 QY-1024
+              演示环境：点击填入演示团码 QY-9696
             </button>
           </section>
         )}

@@ -967,7 +967,7 @@ export default function NewTourPage() {
               inputMode="numeric"
               value={pin}
               onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
-              placeholder="如：2468"
+              placeholder="如：123456"
               className="h-14 text-center font-mono text-xl tracking-[0.4em]"
               maxLength={6}
               autoFocus

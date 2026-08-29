@@ -53,7 +53,7 @@ export default function GuideEntryPage() {
           <Input
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
-            placeholder="例如 QY-1024"
+            placeholder="例如 QY-9696"
             className="h-14 font-mono text-lg tracking-[0.2em]"
             maxLength={10}
           />
@@ -74,8 +74,8 @@ export default function GuideEntryPage() {
         <button
           type="button"
           onClick={() => {
-            setCode("QY-1024");
-            setPin("2468");
+            setCode("QY-9696");
+            setPin("123456");
           }}
           className="self-start text-xs text-qian-500 underline underline-offset-2"
         >
