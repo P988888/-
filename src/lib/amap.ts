@@ -1,4 +1,5 @@
 import "server-only";
+import https from "node:https";
 
 export interface AmapPoint {
   lng: number;
@@ -163,15 +164,35 @@ async function fetchMapService(url: string): Promise<Response> {
   let lastError: unknown;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      return await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(12_000) });
+      // 部分云服务器上 Node/undici 的 Happy Eyeballs 会同时尝试不可达 IPv6，最终把可用的
+      // IPv4 请求也判为 ETIMEDOUT。固定 family=4 与 curl/高德实际可达链路保持一致。
+      return await fetchViaIpv4(url);
     } catch (error) {
       lastError = error;
     }
   }
-  // Node/代理的底层 “fetch failed” 对用户没有帮助，统一成可理解且可在前端降级的错误。
-  throw new Error(lastError instanceof Error && lastError.name === "TimeoutError"
+  throw new Error(lastError instanceof Error && /timeout/i.test(lastError.message)
     ? "地图服务响应超时，请稍后重试"
     : "地图服务网络连接异常，请稍后重试");
+}
+
+function fetchViaIpv4(url: string): Promise<Response> {
+  return new Promise((resolve, reject) => {
+    const request = https.get(url, { family: 4, timeout: 12_000 }, (response) => {
+      const chunks: Buffer[] = [];
+      response.on("data", (chunk: Buffer) => chunks.push(chunk));
+      response.on("end", () => {
+        const headers = new Headers();
+        for (const [name, value] of Object.entries(response.headers)) {
+          if (Array.isArray(value)) value.forEach((item) => headers.append(name, item));
+          else if (value !== undefined) headers.set(name, value);
+        }
+        resolve(new Response(Buffer.concat(chunks), { status: response.statusCode ?? 502, headers }));
+      });
+    });
+    request.once("timeout", () => request.destroy(new Error("地图服务响应超时")));
+    request.once("error", reject);
+  });
 }
 
 function samplePoints<T>(points: T[], max: number): T[] {
