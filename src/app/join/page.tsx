@@ -190,7 +190,7 @@ export default function JoinPage() {
           disabled={submitting}
           onClick={next}
         >
-          {submitting ? "正在加入…" : step === 2 ? `进团，和「${nickname || "我"}」一起出发` : "下一步"}
+          {submitting ? "正在加入…" : step === 2 ? "进团，和阿黔一起出发" : "下一步"}
         </Button>
       </footer>
     </AppShell>

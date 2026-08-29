@@ -60,22 +60,38 @@ export function RouteMap({
   useEffect(() => {
     if (!tourCode || routeInput.length < minPoints) return;
     const controller = new AbortController();
-    void fetch("/api/amap/route", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ tourCode, points: routeInput, mode }),
-      signal: controller.signal,
-    })
-      .then(async (response) => {
-        const data = (await response.json()) as { route?: AmapRoute; error?: string };
-        if (!response.ok || !data.route) throw new Error(data.error || "高德路线服务暂时不可用");
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const loadRoute = async (attempt = 0) => {
+      try {
+        const response = await fetch("/api/amap/route", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ tourCode, points: routeInput, mode }),
+          signal: controller.signal,
+        });
+        const contentType = response.headers.get("content-type") ?? "";
+        const data = contentType.includes("application/json")
+          ? await response.json() as { route?: AmapRoute; error?: string }
+          : undefined;
+        if (!response.ok || !data?.route) throw new Error(data?.error || "地图路线服务暂时不可用");
         setRouteState({ key: routeKey, route: data.route });
-      })
-      .catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-        setRouteState({ key: routeKey, error: error instanceof Error ? error.message : "高德路线服务暂时不可用" });
-      });
-    return () => controller.abort();
+      } catch (error: unknown) {
+        if (controller.signal.aborted) return;
+        // 移动网络偶发断流时自动重试一次，不把浏览器底层的 “fetch failed” 直接暴露给游客。
+        if (attempt === 0 && isRetryableRouteError(error)) {
+          retryTimer = setTimeout(() => void loadRoute(1), 800);
+          return;
+        }
+        setRouteState({ key: routeKey, error: readableRouteError(error) });
+      }
+    };
+
+    void loadRoute();
+    return () => {
+      controller.abort();
+      if (retryTimer) clearTimeout(retryTimer);
+    };
   }, [tourCode, routeInput, mode, routeKey, minPoints]);
 
   const W = 380;
@@ -195,6 +211,19 @@ function createProjector(points: Point[], width: number, height: number, padding
 
 function truncate(value: string, length: number) {
   return value.length > length ? `${value.slice(0, length - 1)}…` : value;
+}
+
+function isRetryableRouteError(error: unknown) {
+  if (!(error instanceof Error)) return true;
+  return /fetch|network|load|timeout|temporarily|暂时/i.test(error.message);
+}
+
+function readableRouteError(error: unknown) {
+  const message = error instanceof Error ? error.message.trim() : "";
+  if (!message || /fetch failed|failed to fetch|networkerror|load failed/i.test(message)) {
+    return "网络连接异常，已显示行程示意图";
+  }
+  return message;
 }
 
 /** 高德单次驾车算路限制内保留首尾与均匀分布的中间景点，保证路线完整而不截断终点。 */

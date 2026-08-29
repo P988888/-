@@ -43,10 +43,7 @@ export async function getAmapDrivingRoute(points: AmapPoint[]): Promise<AmapDriv
   });
   if (points.length > 2) query.set("waypoints", points.slice(1, -1).map(asAmapPoint).join(";"));
 
-  const response = await fetch(`https://restapi.amap.com/v5/direction/driving?${query.toString()}`, {
-    cache: "no-store",
-    signal: AbortSignal.timeout(10_000),
-  });
+  const response = await fetchMapService(`https://restapi.amap.com/v5/direction/driving?${query.toString()}`);
   if (!response.ok) throw new Error("高德路线服务暂时不可用");
   const data = (await response.json()) as AmapResponse;
   if (data.status !== "1") throw new Error(data.info || "高德未返回可用路线");
@@ -79,9 +76,7 @@ export async function getAmapWalkingRoute(points: AmapPoint[]): Promise<AmapDriv
   const routes = await Promise.all(points.slice(0, -1).map(async (origin, index) => {
     const query = new URLSearchParams({ key, origin: asAmapPoint(origin), destination: asAmapPoint(points[index + 1]), output: "json" });
     // v3 步行接口会返回每一步的 polyline；v5 目前仅返回文字指引，无法绘制真实步道。
-    const response = await fetch(`https://restapi.amap.com/v3/direction/walking?${query.toString()}`, {
-      cache: "no-store", signal: AbortSignal.timeout(10_000),
-    });
+    const response = await fetchMapService(`https://restapi.amap.com/v3/direction/walking?${query.toString()}`);
     if (!response.ok) throw new Error("高德步行路线服务暂时不可用");
     const data = (await response.json()) as AmapResponse;
     const path = data.route?.paths?.[0];
@@ -118,10 +113,7 @@ async function createMarkerMap(points: AmapPoint[]): Promise<string> {
   const markers = stops.map((point, index) => `mid,0x1F4A5E,${index + 1}:${toLocation(point)}`).join("|");
   const labels = stops.map((point, index) => `D${index + 1},0,1,12,0x1F4A5E,0xFFFFFF:${toLocation(point)}`).join("|");
   const query = new URLSearchParams({ key, size: "750*300", scale: "2", markers, labels });
-  const response = await fetch(`https://restapi.amap.com/v3/staticmap?${query.toString()}`, {
-    cache: "no-store",
-    signal: AbortSignal.timeout(10_000),
-  });
+  const response = await fetchMapService(`https://restapi.amap.com/v3/staticmap?${query.toString()}`);
   const contentType = response.headers.get("content-type") ?? "";
   if (!response.ok || !contentType.startsWith("image/")) throw new Error("高德静态地图暂时不可用");
   return `data:${contentType};base64,${Buffer.from(await response.arrayBuffer()).toString("base64")}`;
@@ -160,14 +152,26 @@ async function createStaticMap(polyline: AmapPoint[], stops: AmapPoint[], mode: 
     labels,
     paths: `8,${mode === "walking" ? "0x3F7A52" : "0x2386D9"},1,,:${sampledLine}`,
   });
-  const response = await fetch(`https://restapi.amap.com/v3/staticmap?${query.toString()}`, {
-    cache: "no-store",
-    signal: AbortSignal.timeout(10_000),
-  });
+  const response = await fetchMapService(`https://restapi.amap.com/v3/staticmap?${query.toString()}`);
   const contentType = response.headers.get("content-type") ?? "";
   if (!response.ok || !contentType.startsWith("image/")) throw new Error("高德静态地图暂时不可用");
   const base64 = Buffer.from(await response.arrayBuffer()).toString("base64");
   return `data:${contentType};base64,${base64}`;
+}
+
+async function fetchMapService(url: string): Promise<Response> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      return await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(12_000) });
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  // Node/代理的底层 “fetch failed” 对用户没有帮助，统一成可理解且可在前端降级的错误。
+  throw new Error(lastError instanceof Error && lastError.name === "TimeoutError"
+    ? "地图服务响应超时，请稍后重试"
+    : "地图服务网络连接异常，请稍后重试");
 }
 
 function samplePoints<T>(points: T[], max: number): T[] {

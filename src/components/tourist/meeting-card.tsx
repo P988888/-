@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MapPin, ShieldCheck, Flag } from "lucide-react";
+import { ImageOff, MapPin, ShieldCheck, Flag } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { formatCnTime } from "@/lib/utils";
 import type { Stage } from "@/lib/demo";
@@ -21,15 +21,7 @@ export function MeetingCard({
     <Card className="overflow-hidden border-qian-200">
       {/* 集合点照片：导游创建行程时配置，游客照着照片找位置；无照片时回退石板纹理 */}
       <div className="relative h-32">
-        {stage.photo ? (
-          <img
-            src={stage.photo}
-            alt={`集合点照片：${stage.point}`}
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-        ) : (
-          <div className="stone-wall absolute inset-0" />
-        )}
+        {stage.photo ? <MeetingPhoto stage={stage} /> : <div className="stone-wall absolute inset-0" />}
         <div className="absolute inset-0 bg-gradient-to-t from-qian-950/70 via-transparent to-transparent" />
         {dayLabel && (
           <span className="absolute left-4 top-3 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur">
@@ -79,6 +71,42 @@ export function MeetingCard({
         </p>
       </div>
     </Card>
+  );
+}
+
+function MeetingPhoto({ stage }: { stage: Stage }) {
+  const directUrl = stage.photo!;
+  const proxyUrl = stage.id ? `/api/meeting-photo/${encodeURIComponent(stage.id)}` : "";
+  const [loadState, setLoadState] = useState<{ photo: string; source: string; failed: boolean }>({
+    photo: directUrl,
+    source: directUrl,
+    failed: false,
+  });
+  const current = loadState.photo === directUrl
+    ? loadState
+    : { photo: directUrl, source: directUrl, failed: false };
+
+  if (current.failed) {
+    return (
+      <div className="stone-wall absolute inset-0 flex items-center justify-center text-white/80">
+        <span className="flex items-center gap-1.5 rounded-full bg-qian-950/45 px-3 py-1.5 text-[11px] backdrop-blur">
+          <ImageOff className="size-3.5" /> 照片暂时无法显示
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={current.source}
+      alt={`集合点照片：${stage.point}`}
+      className="absolute inset-0 h-full w-full object-cover"
+      onError={() => {
+        setLoadState(proxyUrl && current.source !== proxyUrl
+          ? { photo: directUrl, source: proxyUrl, failed: false }
+          : { photo: directUrl, source: current.source, failed: true });
+      }}
+    />
   );
 }
 
