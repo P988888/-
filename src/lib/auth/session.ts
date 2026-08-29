@@ -16,7 +16,6 @@ function key(): Uint8Array {
   );
 }
 
-const isProd = process.env.NODE_ENV === "production";
 const memberCookie = (code: string) => `aq_m_${code.toUpperCase()}`;
 const guideCookie = (code: string) => `aq_g_${code.toUpperCase()}`;
 
@@ -44,7 +43,7 @@ export async function setMemberSession(tourCode: string, memberId: string) {
   const store = await cookies();
   store.set(memberCookie(tourCode), jwt, {
     httpOnly: true,
-    secure: isProd && (process.env.NEXT_PUBLIC_APP_URL?.startsWith("https") ?? false),
+    secure: process.env.NEXT_PUBLIC_APP_URL?.startsWith("https://") ?? false,
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 2,
@@ -115,7 +114,7 @@ export async function setGuideSession(tourCode: string) {
   const store = await cookies();
   store.set(guideCookie(tourCode), jwt, {
     httpOnly: true,
-    secure: isProd && (process.env.NEXT_PUBLIC_APP_URL?.startsWith("https") ?? false),
+    secure: process.env.NEXT_PUBLIC_APP_URL?.startsWith("https://") ?? false,
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 2,

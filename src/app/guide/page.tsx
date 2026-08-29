@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, KeyRound, IdCard, PlusCircle } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
@@ -11,7 +10,6 @@ import { verifyGuidePin } from "@/actions/auth-actions";
 
 /** 导游入口：团码 + 口令，单页进入驾驶舱 */
 export default function GuideEntryPage() {
-  const router = useRouter();
   const [code, setCode] = useState("");
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
@@ -28,7 +26,9 @@ export default function GuideEntryPage() {
     const result = await verifyGuidePin({ tourCode: code, pin });
     setSubmitting(false);
     if (!result.ok) return setError(result.error);
-    router.push(`/guide/${encodeURIComponent(result.tourCode)}`);
+    // 导游会话 Cookie 由 Server Action 写入；使用完整页面跳转，确保浏览器先落盘 Cookie，
+    // 再请求驾驶舱，避免客户端路由缓存命中未登录响应后又回到 /guide。
+    window.location.assign(`/guide/${encodeURIComponent(result.tourCode)}`);
   }
 
   return (

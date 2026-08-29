@@ -92,8 +92,8 @@ export function AlertCard({
   const meta = typeMeta[type];
 
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center bg-qian-950/50 backdrop-blur-[2px]">
-      <div className="w-full max-w-[430px] rounded-t-[28px] bg-card p-5 pb-8 pb-safe shadow-lift">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-qian-950/50 p-4 backdrop-blur-[2px]">
+      <div className="max-h-[calc(100dvh-32px)] w-full max-w-[398px] overflow-y-auto rounded-[28px] bg-card p-5 pb-6 shadow-lift">
         {/* 头部：图标 + 文字明示「转交真人」 */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2.5">

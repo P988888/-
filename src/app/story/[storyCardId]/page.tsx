@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight, Share2 } from "lucide-react";
 import { and, asc, eq } from "drizzle-orm";
 import { AppShell } from "@/components/app-shell";
+import { StoryBackButton } from "@/components/story-back-button";
 import { formatCnDate } from "@/lib/utils";
 import { getStoryCard } from "@/lib/db/queries";
 import { db, schema } from "@/lib/db";
@@ -28,7 +29,8 @@ export default async function StoryCardPage({ params }: { params: Promise<{ stor
 
   return (
     <AppShell>
-      <main className="flex flex-1 flex-col items-center px-5 py-8">
+      <main className="flex flex-1 flex-col items-center px-5 py-6">
+        <StoryBackButton />
         <article className="w-full overflow-hidden rounded-[24px] border border-[#d7d7cf] bg-white shadow-lift">
           <header className="bg-[#183f36] px-6 py-7 text-white">
             <h1 className="font-display text-2xl font-bold">我的贵州故事卡</h1>
