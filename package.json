@@ -1,5 +1,6 @@
 {
   "name": "aqian",
+  "description": "阿黔 · AI 副导（贵客松文旅赛道）· 前端与应用代码",
   "version": "0.1.0",
   "private": true,
   "scripts": {

@@ -1,3 +1,4 @@
+// 阿黔 · AI 副导（贵客松文旅赛道）· 前端与应用代码
 /// <reference types="next" />
 /// <reference types="next/image-types/global" />
 import "./.next/types/routes.d.ts";

@@ -1,3 +1,4 @@
+// 阿黔 · AI 副导（贵客松文旅赛道）· 前端与应用代码
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";

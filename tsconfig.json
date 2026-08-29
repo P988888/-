@@ -1,4 +1,5 @@
 {
+  "_project": "阿黔 · AI 副导（贵客松文旅赛道）· 前端与应用代码",
   "compilerOptions": {
     "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
