@@ -1,3 +1,4 @@
+// 阿黔布依蜡染故事卡演示数据脚本。
 const Database = require("better-sqlite3");
 
 const databasePath = process.argv[2] || "seed/aqian.db";
